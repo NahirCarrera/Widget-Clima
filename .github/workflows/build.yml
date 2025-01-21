@@ -8,13 +8,13 @@ on:
 jobs:
   build:
     name: Build and Analyze
-    runs-on: ubuntu-latest  # Cambiado a Ubuntu para compatibilidad con Docker
+    runs-on: ubuntu-latest
 
     steps:
       # 1. Checkout del código fuente
       - name: Check out code
         uses: actions/checkout@v4
-        
+      
       # 2. Iniciar el servidor SonarQube con Docker
       - name: Set up SonarQube
         run: |
@@ -27,7 +27,7 @@ jobs:
           wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
           unzip sonar-scanner-cli-5.0.1.3006-linux.zip
           sudo mv sonar-scanner-5.0.1.3006-linux /usr/local/sonar-scanner
-          export PATH="/usr/local/sonar-scanner/bin:$PATH"
+          echo "export PATH=/usr/local/sonar-scanner/bin:\$PATH" >> $GITHUB_ENV
 
       # 4. Analizar el código con SonarQube
       - name: Analyze code with SonarQube
