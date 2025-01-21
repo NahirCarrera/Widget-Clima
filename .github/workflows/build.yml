@@ -1,4 +1,4 @@
-name: Build
+name: Build and Analyze with SonarQube
 
 on:
   push:
@@ -7,23 +7,41 @@ on:
 
 jobs:
   build:
-    name: Build and analyze
+    name: Build and Analyze
     runs-on: windows-latest
 
     steps:
+      # Paso 1: Check out del código
       - name: Check out code
         uses: actions/checkout@v4
-        
-      - name: Set up SonarQube
-        run: |
-          docker run -d --name sonarqube -p 9000:9000 sonarqube:latest
-          sleep 60 # Tiempo para que SonarQube se inicie completamente
 
+      # Paso 2: Configurar Docker para SonarQube
+      - name: Set up SonarQube container
+        run: |
+          docker network create sonarqube-network
+          docker run -d --name sonarqube --network sonarqube-network -p 9000:9000 sonarqube:latest
+          sleep 90 # Esperar para que SonarQube se inicie completamente
+
+      # Paso 3: Instalar Sonar Scanner
+      - name: Install Sonar Scanner
+        run: |
+          choco install sonarscanner -y
+
+      # Paso 4: Analizar el código con SonarQube
       - name: Analyze code with SonarQube
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: http://localhost:9000
+          SONAR_LOGIN: ${{ secrets.SONAR_TOKEN }}
         run: |
           sonar-scanner \
           -Dsonar.projectKey=WidgetClimaTesting \
-          -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          -Dsonar.host.url=$SONAR_HOST_URL \
+          -Dsonar.login=$SONAR_LOGIN
+
+      # Paso 5: Finalizar el contenedor de SonarQube
+      - name: Clean up SonarQube container
+        if: always()
+        run: |
+          docker stop sonarqube
+          docker rm sonarqube
+          docker network rm sonarqube-network
