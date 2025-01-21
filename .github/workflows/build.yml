@@ -18,6 +18,41 @@ jobs:
         run: |
           docker run -d --name sonarqube -p 9000:9000 sonarqube:latest
           sleep 60 # Tiempo para que SonarQube se inicie completamente
+name: Build and Analyze with SonarQube
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Analyze
+    runs-on: ubuntu-latest  # Cambia a un entorno Linux
+
+    steps:
+      # 1. Checkout del código fuente
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Iniciar el servidor de SonarQube con Docker
+      - name: Start SonarQube
+        run: |
+          docker run -d --name sonarqube -p 9000:9000 sonarqube:community
+          sleep 60  # Da tiempo al servidor para inicializar completamente
+
+      # 3. Analizar el código con SonarScanner
+      - name: Run SonarScanner
+        env:
+          SONAR_HOST_URL: http://localhost:9000
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # Token secreto
+        run: |
+          sonar-scanner \
+          -Dsonar.projectKey=WidgetClimaTesting \
+          -Dsonar.sources=./lib \
+          -Dsonar.tests=./test \
+          -Dsonar.exclusions=**/*.g.dart \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
       - name: Analyze code with SonarQube
         env:
