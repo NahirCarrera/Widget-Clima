@@ -14,30 +14,28 @@ jobs:
       # 1. Checkout del código fuente
       - name: Check out code
         uses: actions/checkout@v4
-      
+
       # 2. Iniciar el servidor SonarQube con Docker
       - name: Set up SonarQube
         run: |
           docker run -d --name sonarqube -p 9000:9000 sonarqube:community
           sleep 60  # Tiempo para que SonarQube se inicie completamente
 
-      # 3. Instalar SonarScanner
-      - name: Install SonarScanner
-        run: |
-          wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-          unzip sonar-scanner-cli-5.0.1.3006-linux.zip
-          sudo mv sonar-scanner-5.0.1.3006-linux /usr/local/sonar-scanner
-          echo "export PATH=/usr/local/sonar-scanner/bin:\$PATH" >> $GITHUB_ENV
-
-      # 4. Analizar el código con SonarQube
-      - name: Analyze code with SonarQube
+      # 3. Instalar SonarScanner y analizar el proyecto
+      - name: Install and run SonarScanner
         env:
           SONAR_HOST_URL: http://localhost:9000
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          sonar-scanner \
+          # Descargar SonarScanner
+          wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+          unzip sonar-scanner-cli-5.0.1.3006-linux.zip
+          
+          # Ejecutar SonarScanner
+          ./sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
           -Dsonar.projectKey=WidgetClimaTesting \
           -Dsonar.sources=./lib \
           -Dsonar.tests=./test \
           -Dsonar.exclusions=**/*.g.dart \
+          -Dsonar.host.url=${{ env.SONAR_HOST_URL }} \
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
